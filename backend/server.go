@@ -8,6 +8,7 @@ import (
 	"gopkg.in/macaron.v1"
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/joho/godotenv"
 )
@@ -36,6 +37,7 @@ func main()  {
 
 	m.Get("/api/popular", fetchMostPopularVideos)
 	m.Get("/api/video/:id", fetchVideoId)
+	m.Get("/api/related/:id", fetchRelatedVideo)
 
 	m.Run(8000)
 
@@ -59,10 +61,18 @@ func fetchMostPopularVideos(c *macaron.Context, logger *log.Logger, yts *youtube
 
 	pageToken := c.Query("pageToken")
 
+	var itemCount int64 = 5
+	itemCount, _ = strconv.ParseInt(c.Query("count"), 10, 64)
+
+	if itemCount == 0 {
+		itemCount = 5
+	}
+
+
 	res, err := yts.Videos.
 		List([]string{"id,snippet"}).
 		Chart("mostPopular").
-		MaxResults(3).
+		MaxResults(itemCount).
 		PageToken(pageToken).
 		Do()
 
@@ -77,11 +87,31 @@ func fetchMostPopularVideos(c *macaron.Context, logger *log.Logger, yts *youtube
 func fetchVideoId(c *macaron.Context, logger *log.Logger, yts *youtube.Service) error {
 
 	id := c.Params(":id")
-	logger.Printf("fetch most popular videos (%s)\n", id)
+	logger.Printf("fetch video by id(%s)\n", id)
 
 	res, err := yts.Videos.
 		List([]string{"id,snippet"}).
 		Id(id).
+		Do()
+
+	if err != nil {
+		return err
+	}
+
+	c.JSON(200, res)
+	return nil
+}
+
+func fetchRelatedVideo(c *macaron.Context, logger *log.Logger, yts *youtube.Service) error {
+
+	id := c.Params(":id")
+	pageToken := c.Query("pageToken")
+
+	res, err := yts.Search.
+		List([]string{"id,snippet"}).
+		RelatedToVideoId(id).
+		PageToken(pageToken).
+		Type("video").
 		Do()
 
 	if err != nil {

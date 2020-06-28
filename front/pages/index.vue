@@ -1,21 +1,16 @@
 <template>
   <div>
 
-    <template v-if="$fetchState.pending">
-      <h1>로딩....</h1>
-    </template>
+    <sui-header>
+      YouTube
+    </sui-header>
 
-    <template v-else-if="$fetchState.error">
-      <h1>Error</h1>
-    </template>
-
-    <template v-else>
-      <sui-card-group :items-per-row="3">
-        <VideoSnippet :item="item.snippet" v-for="(item, index) in items" :key="index"/>
-      </sui-card-group>
-      <sui-button primary @click="getMore">More</sui-button>
-    </template>
-
+    <sui-card-group :items-per-row="3">
+      <VideoSnippet :item="item.snippet"
+                    :id="item.id"
+                    v-for="(item, index) in items" :key="index"/>
+    </sui-card-group>
+    <sui-button primary @click="getMore">More</sui-button>
 
   </div>
 
@@ -38,12 +33,15 @@
 
 
     async fetch() {
-      await this.$store.dispatch('fetchPopularVideos')
+      if (this.$store.getters.getPopularVideos && this.$store.getters.getPopularVideos.length > 0)
+        return
+
+      await this.$store.dispatch('fetchPopularVideos', {count: 100})
     },
 
     methods: {
       getMore() {
-        this.$store.dispatch('fetchPopularVideos', {pageToken: this.nextPageToken})
+        this.$store.dispatch('fetchPopularVideos', {pageToken: this.nextPageToken, count: 100})
       }
     }
   }

@@ -1,8 +1,10 @@
 <template>
  <sui-card>
+
    <sui-card-content>
-     <sui-image :src="item.thumbnails.default.url" />
-     <sui-card-header>{{item.title}}</sui-card-header>
+     <sui-image :src="item.thumbnails.medium.url" />
+     <sui-card-header>
+       <nuxt-link :to="`/video/${id}`">{{item.title}}</nuxt-link> </sui-card-header>
      <sui-card-meta>
        <span>채널</span> {{item.channelTitle}}
 
@@ -17,6 +19,7 @@
 
    </sui-card-content>
 
+
  </sui-card>
 </template>
 
@@ -26,6 +29,9 @@
     props: {
       item: {
         type: Object
+      },
+      id: {
+        type: String
       }
     },
 
