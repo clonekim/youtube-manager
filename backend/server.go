@@ -38,6 +38,7 @@ func main()  {
 	m.Get("/api/popular", fetchMostPopularVideos)
 	m.Get("/api/video/:id", fetchVideoId)
 	m.Get("/api/related/:id", fetchRelatedVideo)
+	m.Get("/api/videoCategory", fetchVideoCategory)
 
 	m.Run(8000)
 
@@ -45,6 +46,8 @@ func main()  {
 
 var (
 	ctx = context.Background()
+	region = ""
+	hl = ""
 )
 
 
@@ -54,6 +57,9 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+
+	region  = os.Getenv("REGION")
+	hl = os.Getenv("HL")
 }
 
 func fetchMostPopularVideos(c *macaron.Context, logger *log.Logger, yts *youtube.Service) error {
@@ -65,15 +71,17 @@ func fetchMostPopularVideos(c *macaron.Context, logger *log.Logger, yts *youtube
 	itemCount, _ = strconv.ParseInt(c.Query("count"), 10, 64)
 
 	if itemCount == 0 {
-		itemCount = 5
+		itemCount = 3
 	}
-
 
 	res, err := yts.Videos.
 		List([]string{"id,snippet"}).
 		Chart("mostPopular").
 		MaxResults(itemCount).
 		PageToken(pageToken).
+		RegionCode(region).
+		Hl(hl).
+		//VideoCategoryId("20").
 		Do()
 
 	if err != nil {
@@ -92,6 +100,8 @@ func fetchVideoId(c *macaron.Context, logger *log.Logger, yts *youtube.Service) 
 	res, err := yts.Videos.
 		List([]string{"id,snippet"}).
 		Id(id).
+		RegionCode(region).
+		Hl(hl).
 		Do()
 
 	if err != nil {
@@ -112,6 +122,23 @@ func fetchRelatedVideo(c *macaron.Context, logger *log.Logger, yts *youtube.Serv
 		RelatedToVideoId(id).
 		PageToken(pageToken).
 		Type("video").
+		RegionCode(region).
+		Do()
+
+	if err != nil {
+		return err
+	}
+
+	c.JSON(200, res)
+	return nil
+}
+
+func fetchVideoCategory(c *macaron.Context, logger *log.Logger, yts *youtube.Service) error {
+
+	res, err := yts.VideoCategories.
+		List([]string{"id","snippet"}).
+		RegionCode(region).
+		Hl(hl).
 		Do()
 
 	if err != nil {
